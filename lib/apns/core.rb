@@ -15,37 +15,28 @@ module APNS
   end
   
   def self.send_notification(device_token, message)
-    sock, ssl = self.open_connection
-    ssl.write(self.packaged_notification(device_token, message))
-
-    ssl.close
-    sock.close
+    self.with_notification_connection do |conn|
+      conn.write(self.packaged_notification(device_token, message))
+    end
   end
   
   def self.send_notifications(notifications)
-    sock, ssl = self.open_connection
-    
-    notifications.each do |n|
-      ssl.write(n.packaged_notification)
+    self.with_notification_connection do |conn|
+      notifications.each do |n|
+        conn.write(n.packaged_notification)
+      end
     end
-    
-    ssl.close
-    sock.close
   end
   
   def self.feedback
-    sock, ssl = self.feedback_connection
-    
     apns_feedback = []
-
-    # Read buffers data from the OS, so it's probably not
-    # too inefficient to do the small reads
-    while data = ssl.read(38)
-      apns_feedback << self.parse_feedback_tuple(data)
+    self.with_feedback_connection do |conn|
+      # Read buffers data from the OS, so it's probably not
+      # too inefficient to do the small reads
+      while data = conn.read(38)
+        apns_feedback << self.parse_feedback_tuple(data)
+      end
     end
-    
-    ssl.close
-    sock.close
     
     return apns_feedback
   end
@@ -93,7 +84,18 @@ module APNS
     aps.to_json
   end
   
-  def self.open_connection(host=self.host, port=self.port)
+  def self.with_notification_connection(&block)
+    self.with_connection(self.host, self.port, &block)
+  end
+
+  def self.with_feedback_connection(&block)
+    fhost = self.host.gsub!('gateway','feedback')
+    self.with_connection(fhost, self.feedback_port, &block)
+  end
+ 
+  private
+
+  def self.with_connection(host, port, &block)
     raise "The path to your pem file is not set. (APNS.pem = /path/to/cert.pem)" unless self.pem
     raise "The path to your pem file does not exist!" unless File.exist?(self.pem)
     
@@ -102,15 +104,12 @@ module APNS
     context.key  = OpenSSL::PKey::RSA.new(File.read(self.pem), self.pass)
 
     sock         = TCPSocket.new(host, port)
-    ssl          = OpenSSL::SSL::SSLSocket.new(sock,context)
+    ssl          = OpenSSL::SSL::SSLSocket.new(sock, context)
     ssl.connect
 
-    return sock, ssl
+    yield ssl if block_given?
+
+    ssl.close
+    sock.close
   end
-  
-  def self.feedback_connection
-    fhost = self.host.gsub!('gateway','feedback')
-    return self.open_connection(fhost, self.feedback_port)
-  end
-  
 end
