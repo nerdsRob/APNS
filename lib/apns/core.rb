@@ -9,22 +9,27 @@ module APNS
   # openssl pkcs12 -in mycert.p12 -out client-cert.pem -nodes -clcerts
   @pem = nil # this should be the path of the pem file not the contentes
   @pass = nil
+
+  @cache_connections = false
+  @connections = {}
   
   class << self
-    attr_accessor :host, :pem, :port, :pass, :feedback_port
+    attr_accessor :host, :pem, :port, :pass, :feedback_port, :cache_connections
   end
   
   def self.send_notification(device_token, message)
     self.with_notification_connection do |conn|
       conn.write(self.packaged_notification(device_token, message))
+      conn.flush
     end
   end
   
   def self.send_notifications(notifications)
     self.with_notification_connection do |conn|
       notifications.each do |n|
-        conn.write(n.packaged_notification)
+        conn.write(self.packaged_notification(n[0], n[1]))
       end
+      conn.flush
     end
   end
   
@@ -41,6 +46,7 @@ module APNS
     return apns_feedback
   end
   
+
   protected
 
   # Each tuple is in the following format:
@@ -78,10 +84,7 @@ module APNS
   end
   
   def self.apns_from_hash(hash)
-    other = hash.delete(:other)
-    aps = {'aps'=> hash }
-    aps.merge!(other) if other
-    aps.to_json
+    hash.to_json
   end
   
   def self.with_notification_connection(&block)
@@ -89,13 +92,19 @@ module APNS
   end
 
   def self.with_feedback_connection(&block)
+    # Explicitly disable the connection cache for feedback
+    cache_temp = @cache_connections
+    @cache_connections = false
+
     fhost = self.host.gsub!('gateway','feedback')
     self.with_connection(fhost, self.feedback_port, &block)
+
+    @cache_connections = cache_temp
   end
  
   private
 
-  def self.with_connection(host, port, &block)
+  def self.open_connection(host, port)
     raise "The path to your pem file is not set. (APNS.pem = /path/to/cert.pem)" unless self.pem
     raise "The path to your pem file does not exist!" unless File.exist?(self.pem)
     
@@ -103,13 +112,87 @@ module APNS
     context.cert = OpenSSL::X509::Certificate.new(File.read(self.pem))
     context.key  = OpenSSL::PKey::RSA.new(File.read(self.pem), self.pass)
 
-    sock         = TCPSocket.new(host, port)
-    ssl          = OpenSSL::SSL::SSLSocket.new(sock, context)
-    ssl.connect
+    retries = 0
+    begin
+      sock         = TCPSocket.new(host, port)
+      ssl          = OpenSSL::SSL::SSLSocket.new(sock, context)
+      ssl.connect
+      return ssl, sock
+    rescue Errno::ECONNREFUSED
+      if retries += 1 < 5
+        sleep 1
+        retry
+      else
+        # Too many retries, re-raise this exception
+        raise
+      end
+    end
+  end
 
-    yield ssl if block_given?
+  def self.has_connection(host, port)
+    @connections.has_key?([host,port])
+  end
 
-    ssl.close
-    sock.close
+  def self.create_connection(host, port)
+    @connections[[host, port]] = self.open_connection(host, port)
+  end
+
+  def self.find_connection(host, port)
+    @connections[[host, port]]
+  end
+
+  def self.remove_connection(host, port)
+    if self.has_connection(host, port)
+      ssl, sock = @connections.delete([host, port])
+      ssl.close
+      sock.close
+    end
+  end
+
+  def self.reconnect_connection(host, port)
+    self.remove_connection(host, port)
+    self.create_connection(host, port)
+  end
+
+  def self.get_connection(host, port)
+    if @cache_connections
+      # Create a new connection if we don't have one
+      unless self.has_connection(host, port)
+        self.create_connection(host, port)
+      end
+
+      ssl, sock = self.find_connection(host, port)
+      # If we're closed, reconnect
+      if ssl.closed?
+        self.reconnect_connection(host, port)
+        self.find_connection(host, port)
+      else
+        return [ssl, sock]
+      end
+    else
+      self.open_connection(host, port)
+    end
+  end
+
+  def self.with_connection(host, port, &block)
+
+    retries = 0
+    begin
+      ssl, sock = self.get_connection(host, port)
+      yield ssl if block_given?
+
+      unless @cache_connections
+        ssl.close
+        sock.close
+      end
+    rescue Errno::ECONNABORTED
+      if retries += 1 < 5
+        self.remove_connection(host, port)
+        retry
+      else
+        # too-many retries, re-raise
+        raise
+      end
+    end
   end
 end
