@@ -3,11 +3,15 @@ module APNS
   require 'openssl'
   require 'json'
 
-  # Sending notifications
+  # Host for push notification service
+  # production: gateway.push.apple.com
+  # development: gateway.sandbox.apple.com
   @host = 'gateway.sandbox.push.apple.com'
   @port = 2195
 
-  # Hosts for apple's feedback service
+  # Host for feedback service
+  # production: feedback.push.apple.com
+  # development: feedback.sandbox.apple.com
   @feedback_host = 'feedback.sandbox.push.apple.com'
   @feedback_port = 2196
 
@@ -21,7 +25,6 @@ module APNS
   class << self
     attr_accessor :host, :port, :feedback_host, :feedback_port, :pem, :pass, :cache_connections
   end
-  
 
   def self.establish_notification_connection
     if @cache_connections
