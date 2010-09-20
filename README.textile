@@ -19,9 +19,7 @@ file will be generated containing certificate and key.
 
 Next, run the following command to convert this .p12 file into a .pem file.
 <pre>
-  <code>
-    openssl pkcs12 -in cert.p12 -out cert.pem -nodes -clcerts
-  </code>
+openssl pkcs12 -in cert.p12 -out cert.pem -nodes -clcerts
 </pre>
 
 This pem file should be stored somewhere secure that your application can access. Next, set the jtv-apns configuration parameters:
