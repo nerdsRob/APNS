@@ -27,49 +27,47 @@ Next, run the following command to convert this .p12 file into a .pem file.
 This pem file should be stored somewhere secure that your application can access. Next, set the jtv-apns configuration parameters:
 
 <pre>
-  <code>
-    ###################
-    # Hosts Config
-    ###################
+###################
+# Hosts Config
+###################
 
-    # Push Notification Service:
-    #
-    # (default: gateway.sandbox.push.apple.com is)
-    # Set as below for a production install
-    APNS.host = 'gateway.push.apple.com' 
-    
-    # (default: 2195)
-    # APNS.port = 2195
+# Push Notification Service:
+#
+# (default: gateway.sandbox.push.apple.com is)
+# Set as below for a production install
+APNS.host = 'gateway.push.apple.com' 
 
-    # Feedback Service:
-    #
-    # (default: feedback.sandbox.push.apple.com)
-    APNS.feedback_host = 'feedback.push.apple.com'
-    
-    # (default: 2196)
-    # APNS.feedback_port = 2196
+# (default: 2195)
+# APNS.port = 2195
 
-    ####################
-    # Certificate Setup
-    ####################
+# Feedback Service:
+#
+# (default: feedback.sandbox.push.apple.com)
+APNS.feedback_host = 'feedback.push.apple.com'
 
-    # Path to the .pem file created earlier
-    APNS.pem  = '/path/to/pem/file'
+# (default: 2196)
+# APNS.feedback_port = 2196
 
-    # Password for decrypting the .pem file, if one was used
-    APNS.pass = 'xxxx'
+####################
+# Certificate Setup
+####################
 
-    ####################
-    # Connection Mgmt
-    ####################
+# Path to the .pem file created earlier
+APNS.pem  = '/path/to/pem/file'
 
-    # Cache open connections when sending push notifications
-    # this will force the gem to keep 1 connection open per
-    # host/port pair, and reuse it when sending notifications
+# Password for decrypting the .pem file, if one was used
+APNS.pass = 'xxxx'
 
-    # (default: false)
-    # APNS.cache_connections = true
-  </code>
+####################
+# Connection Mgmt
+####################
+
+# Cache open connections when sending push notifications
+# this will force the gem to keep 1 connection open per
+# host/port pair, and reuse it when sending notifications
+
+# (default: false)
+# APNS.cache_connections = true
 </pre>
 
 h2. Example (Single notification):
@@ -77,12 +75,10 @@ h2. Example (Single notification):
 Then to send a push notification you can either just send a string as the alert or give it a hash for the alert, badge and sound.
 
 <pre>
-  <code>
-    device_token = '123abc456def'
+device_token = '123abc456def'
 
-    APNS.send_notification(device_token, 'Hello iPhone!')
-    APNS.send_notification(device_token, :aps => {:alert => 'Hello iPhone!', :badge => 1, :sound => 'default'})
-  </code>
+APNS.send_notification(device_token, 'Hello iPhone!')
+APNS.send_notification(device_token, :aps => {:alert => 'Hello iPhone!', :badge => 1, :sound => 'default'})
 </pre>
 
 h2. Example (Multiple notifications):
@@ -90,14 +86,12 @@ h2. Example (Multiple notifications):
 You can also send multiple notifications using the same connection to Apple:
 
 <pre>
-  <code>
-    device_token = '123abc456def'
+device_token = '123abc456def'
 
-    n1 = [device_token, :aps => { :alert => 'Hello...', :badge => 1, :sound => 'default' }
-    n2 = [device_token, :aps => { :alert => '... iPhone!', :badge => 1, :sound => 'default' }]
-    
-    APNS.send_notifications([n1, n2])
-  </code>
+n1 = [device_token, :aps => { :alert => 'Hello...', :badge => 1, :sound => 'default' }
+n2 = [device_token, :aps => { :alert => '... iPhone!', :badge => 1, :sound => 'default' }]
+
+APNS.send_notifications([n1, n2])
 </pre>
 
 
@@ -107,10 +101,8 @@ Application-specific information can be included along with the alert by
 passing it along with the "aps" key in the message hash.
 
 <pre>
-  <code>
-    APNS.send_notification(device_token, :aps => { :alert => 'Hello iPhone!', :badge => 1, :sound => 'default'},
-                                         :sent_by => 'Justin.tv')
-  </code>
+APNS.send_notification(device_token, :aps => { :alert => 'Hello iPhone!', :badge => 1, :sound => 'default'},
+                                     :sent_by => 'Justin.tv')
 </pre>
 
 h2. Pre-establishing connections
@@ -118,13 +110,11 @@ h2. Pre-establishing connections
 If connection caching is enabled, you can tell the gem to establish connections before sending any notifications.
 
 <pre>
-  <code>
-    APNS.establishing_notification_connection
-    ...
-    if APNS.has_notification_connection?
-      APNS.send_notification(device_token, "It works!")
-    end
-  </code>
+APNS.establishing_notification_connection
+# ...
+if APNS.has_notification_connection?
+  APNS.send_notification(device_token, "It works!")
+end
 </pre>
 
 h2. Accessing the feedback service
@@ -132,18 +122,16 @@ h2. Accessing the feedback service
 jtv-apns provides a simple api to access Apple's feedback service. Below is an example for setting the feedback time on an ActiveRecord object corresponding to a device token.
 
 <pre>
-  <code>
-    # APNS.feedback_each returns an array of Hash objects with the following keys
-    # :feedback_on => (Time) Time Apple considers app unregistered from device
-    # :length => (Fixnum) Length of :device_token, currently always 32 (bytes)
-    # :device_token => (String) hex-encoded device token
-    APNS.feedback.each do |feedback|
-     d = RegisteredDevices.find(:first, :conditions => { :device_token = feedback.device_token })
-     unless d.nil?
-      d.feedback_on = feedback.feedback_on
-     end
-    end
-  </code>
+# APNS.feedback_each returns an array of Hash objects with the following keys
+# :feedback_on => (Time) Time Apple considers app unregistered from device
+# :length => (Fixnum) Length of :device_token, currently always 32 (bytes)
+# :device_token => (String) hex-encoded device token
+APNS.feedback.each do |feedback|
+  d = RegisteredDevices.find(:first, :conditions => { :device_token = feedback.device_token })
+  unless d.nil?
+    d.feedback_on = feedback.feedback_on
+  end
+end
 </pre>
 
 h2. Getting your iPhone's device token
@@ -152,18 +140,16 @@ After you setup push notification for your application with Apple. You need to a
 
 ApplicationAppDelegate.m
 <pre>
-  <code>
-    - (void)applicationDidFinishLaunching:(UIApplication *)application {    
-        // Register with apple that this app will use push notification
-        [[UIApplication sharedApplication] registerForRemoteNotificationTypes:(UIRemoteNotificationTypeAlert | 
-          UIRemoteNotificationTypeSound | UIRemoteNotificationTypeBadge)];	
-    }
+- (void)applicationDidFinishLaunching:(UIApplication *)application {    
+    // Register with apple that this app will use push notification
+    [[UIApplication sharedApplication] registerForRemoteNotificationTypes:(UIRemoteNotificationTypeAlert | 
+      UIRemoteNotificationTypeSound | UIRemoteNotificationTypeBadge)];	
+}
 
-    - (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
-        // Show the device token obtained from apple to the log
-        NSLog(@"deviceToken: %@", deviceToken);
-    }
-  </code>
+- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
+    // Show the device token obtained from apple to the log
+    NSLog(@"deviceToken: %@", deviceToken);
+}
 </pre>
     
 
