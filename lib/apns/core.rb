@@ -121,7 +121,7 @@ module APNS
   
   def self.packaged_message(message)
     if message.is_a?(Hash)
-      apns_from_hash(message)
+      message.to_json
     elsif message.is_a?(String)
       '{"aps":{"alert":"'+ message + '"}}'
     else

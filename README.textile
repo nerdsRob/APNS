@@ -1,35 +1,96 @@
-h1. APNS
+Copyright (c) 2009 James Pozdena, 2010 Justin.tv
+ 
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without
+restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following
+conditions:
+ 
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+ 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+ 
 
-a gem for the Apple Push Notification Service.
+h1. JTV-APNS
+
+Jtv-apns is a gem for accessing the Apple Push Notification Service that allows
+both sending notifications and reading from apple's feedback service. This gem
+is based heavily on the work of James Pozdena (http://github.com/jpoz/APNS).
 
 h2. Install
 
-sudo gem install apns
+sudo gem install jtv-apns
 
 h2. Setup:
 
-Convert your certificate
+First, you will need to export your development/production iphone push service
+certificate and key from your keychain. To do this select the private key and
+certificate, and select File -> Export from your keychain. By default a .p12
+file will be generated containing certificate and key.
 
-In Keychain access export your certificate as a p12. Then run the following command to convert it to a .pem
-
+Next, run the following command to convert this .p12 file into a .pem file.
 <pre>
   <code>
     openssl pkcs12 -in cert.p12 -out cert.pem -nodes -clcerts
   </code>
 </pre>
 
-After you have your .pem file. Set what host, port, certificate file location on the APNS class:
+This pem file should be stored somewhere secure that your application can access. Next, set the jtv-apns configuration parameters:
 
 <pre>
   <code>
-    APNS.host = 'gateway.push.apple.com' 
-    # gateway.sandbox.push.apple.com is default
+    ###################
+    # Hosts Config
+    ###################
 
-    APNS.pem  = '/path/to/pem/file'
-    # this is the file you just created
+    # Push Notification Service:
+    #
+    # (default: gateway.sandbox.push.apple.com is)
+    # Set as below for a production install
+    APNS.host = 'gateway.push.apple.com' 
     
-    APNS.port = 2195 
-    # this is also the default. Shouldn't ever have to set this, but just in case Apple goes crazy, you can.
+    # (default: 2195)
+    # APNS.port = 2195
+
+    # Feedback Service:
+    #
+    # (default: feedback.sandbox.push.apple.com)
+    APNS.feedback_host = 'feedback.push.apple.com'
+    
+    # (default: 2196)
+    # APNS.feedback_port = 2196
+
+    ####################
+    # Certificate Setup
+    ####################
+
+    # Path to the .pem file created earlier
+    APNS.pem  = '/path/to/pem/file'
+
+    # Password for decrypting the .pem file, if one was used
+    APNS.pass = 'xxxx'
+
+    ####################
+    # Connection Mgmt
+    ####################
+
+    # Cache open connections when sending push notifications
+    # this will force the gem to keep 1 connection open per
+    # host/port pair, and reuse it when sending notifications
+
+    # (default: false)
+    # APNS.cache_connections = true
   </code>
 </pre>
 
@@ -41,9 +102,8 @@ Then to send a push notification you can either just send a string as the alert 
   <code>
     device_token = '123abc456def'
 
-    APNS.send_notification(device_token, 'Hello iPhone!' )
-
-    APNS.send_notification(device_token, :alert => 'Hello iPhone!', :badge => 1, :sound => 'default')
+    APNS.send_notification(device_token, 'Hello iPhone!')
+    APNS.send_notification(device_token, :aps => {:alert => 'Hello iPhone!', :badge => 1, :sound => 'default'})
   </code>
 </pre>
 
@@ -55,9 +115,8 @@ You can also send multiple notifications using the same connection to Apple:
   <code>
     device_token = '123abc456def'
 
-    n1 = APNS::Notification.new(device_token, 'Hello iPhone!' )
-
-    n2 = APNS::Notification.new(device_token, :alert => 'Hello iPhone!', :badge => 1, :sound => 'default')
+    n1 = [device_token, :aps => { :alert => 'Hello...', :badge => 1, :sound => 'default' }
+    n2 = [device_token, :aps => { :alert => '... iPhone!', :badge => 1, :sound => 'default' }]
     
     APNS.send_notifications([n1, n2])
   </code>
@@ -66,23 +125,48 @@ You can also send multiple notifications using the same connection to Apple:
 
 h2. Send other info along with aps
 
-You can send other application specific information as well.
+Application-specific information can be included along with the alert by
+passing it along with the "aps" key in the message hash.
 
 <pre>
   <code>
-    APNS.send_notification(device_token, :alert => 'Hello iPhone!', :badge => 1, :sound => 'default',
-                                         :other => {:sent => 'with apns gem'})
+    APNS.send_notification(device_token, :aps => { :alert => 'Hello iPhone!', :badge => 1, :sound => 'default'},
+                                         :sent_by => 'Justin.tv')
   </code>
 </pre>
 
-This will add the other hash to the same level as the aps hash:
+h2. Pre-establishing connections
+
+If connection caching is enabled, you can tell the gem to establish connections before sending any notifications.
 
 <pre>
   <code>
-    {"aps":{"alert":"Hello iPhone!","badge":1,"sound":"default"},"sent":"with apns gem"}
+    APNS.establishing_notification_connection
+    ...
+    if APNS.has_notification_connection?
+      APNS.send_notification(device_token, "It works!")
+    end
   </code>
 </pre>
 
+h2. Accessing the feedback service
+
+jtv-apns provides a simple api to access Apple's feedback service. Below is an example for setting the feedback time on an ActiveRecord object corresponding to a device token.
+
+<pre>
+  <code>
+    # APNS.feedback_each returns an array of Hash objects with the following keys
+    # :feedback_on => (Time) Time Apple considers app unregistered from device
+    # :length => (Fixnum) Length of :device_token, currently always 32 (bytes)
+    # :device_token => (String) hex-encoded device token
+    APNS.feedback.each do |feedback|
+     d = RegisteredDevices.find(:first, :conditions => { :device_token = feedback.device_token })
+     unless d.nil?
+      d.feedback_on = feedback.feedback_on
+     end
+    end
+  </code>
+</pre>
 
 h2. Getting your iPhone's device token
 
@@ -104,5 +188,4 @@ ApplicationAppDelegate.m
   </code>
 </pre>
     
-
 
