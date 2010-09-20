@@ -3,9 +3,14 @@ module APNS
   require 'openssl'
   require 'json'
 
+  # Sending notifications
   @host = 'gateway.sandbox.push.apple.com'
   @port = 2195
+
+  # Hosts for apple's feedback service
+  @feedback_host = 'feedback.sandbox.push.apple.com'
   @feedback_port = 2196
+
   # openssl pkcs12 -in mycert.p12 -out client-cert.pem -nodes -clcerts
   @pem = nil # this should be the path of the pem file not the contentes
   @pass = nil
@@ -14,7 +19,7 @@ module APNS
   @connections = {}
   
   class << self
-    attr_accessor :host, :pem, :port, :pass, :feedback_port, :cache_connections
+    attr_accessor :host, :port, :feedback_host, :feedback_port, :pem, :pass, :cache_connections
   end
   
   def self.send_notification(device_token, message)
@@ -45,7 +50,6 @@ module APNS
     
     return apns_feedback
   end
-  
 
   protected
 
@@ -96,9 +100,9 @@ module APNS
     cache_temp = @cache_connections
     @cache_connections = false
 
-    fhost = self.host.gsub!('gateway','feedback')
-    self.with_connection(fhost, self.feedback_port, &block)
+    self.with_connection(self.feedback_host, self.feedback_port, &block)
 
+  ensure
     @cache_connections = cache_temp
   end
  
@@ -119,7 +123,7 @@ module APNS
       ssl.connect
       return ssl, sock
     rescue Errno::ECONNREFUSED
-      if retries += 1 < 5
+      if (retries += 1) < 5
         sleep 1
         retry
       else
@@ -175,7 +179,6 @@ module APNS
   end
 
   def self.with_connection(host, port, &block)
-
     retries = 0
     begin
       ssl, sock = self.get_connection(host, port)
@@ -186,7 +189,7 @@ module APNS
         sock.close
       end
     rescue Errno::ECONNABORTED
-      if retries += 1 < 5
+      if (retries += 1) < 5
         self.remove_connection(host, port)
         retry
       else
