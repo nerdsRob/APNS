@@ -60,7 +60,7 @@ module APNS
     return false
   end
 
-  def has_notification_connection?
+  def self.has_notification_connection?
     return self.has_connection?(self.host, self.port)
   end
 
