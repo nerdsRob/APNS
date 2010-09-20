@@ -17,11 +17,27 @@ module APNS
 
   @cache_connections = false
   @connections = {}
-  
+
   class << self
     attr_accessor :host, :port, :feedback_host, :feedback_port, :pem, :pass, :cache_connections
   end
   
+
+  def self.establish_notification_connection
+    if @cache_connections
+      begin
+        self.get_connection(self.host, self.port)
+        return true
+      rescue
+      end
+    end
+    return false
+  end
+
+  def has_notification_connection?
+    return self.has_connection?(self.host, self.port)
+  end
+
   def self.send_notification(device_token, message)
     self.with_notification_connection do |conn|
       conn.write(self.packaged_notification(device_token, message))
@@ -133,7 +149,7 @@ module APNS
     end
   end
 
-  def self.has_connection(host, port)
+  def self.has_connection?(host, port)
     @connections.has_key?([host,port])
   end
 
@@ -146,7 +162,7 @@ module APNS
   end
 
   def self.remove_connection(host, port)
-    if self.has_connection(host, port)
+    if self.has_connection?(host, port)
       ssl, sock = @connections.delete([host, port])
       ssl.close
       sock.close
@@ -161,7 +177,7 @@ module APNS
   def self.get_connection(host, port)
     if @cache_connections
       # Create a new connection if we don't have one
-      unless self.has_connection(host, port)
+      unless self.has_connection?(host, port)
         self.create_connection(host, port)
       end
 
