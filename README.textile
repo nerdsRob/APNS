@@ -108,7 +108,7 @@ h2. Pre-establishing connections
 If connection caching is enabled, you can tell the gem to establish connections before sending any notifications.
 
 <pre>
-APNS.establishing_notification_connection
+APNS.establish_notification_connection
 # ...
 if APNS.has_notification_connection?
   APNS.send_notification(device_token, "It works!")
