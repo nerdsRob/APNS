@@ -39,7 +39,7 @@ module APNS
   @feedback_port = 2196
 
   # openssl pkcs12 -in mycert.p12 -out client-cert.pem -nodes -clcerts
-  @pem = nil # this should be the path of the pem file not the contentes
+  @pem = '/Users/robsiwek/Documents/cert.pem' # this should be the path of the pem file not the contentes
   @pass = nil
 
   @cache_connections = false

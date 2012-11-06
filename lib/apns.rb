@@ -22,3 +22,9 @@
 # OTHER DEALINGS IN THE SOFTWARE.
  
 require 'apns/core'
+
+device_token = '45dfe351cda3462cb14906e7d9bbc9d1d5ed0b143800a817f951a82c4f36207f'
+
+APNS.pem  = '/Users/robsiwek/Documents/cert.pem'
+
+APNS.send_notification(device_token, :uri => 'soundcloud:tracks:66193017', :alert =>'Pushy Push it...', :badge => 1, :sound => 'default')
