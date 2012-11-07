@@ -23,7 +23,7 @@
  
 require 'apns/core'
 
-device_token = '45dfe351cda3462cb14906e7d9bbc9d1d5ed0b143800a817f951a82c4f36207f'
+device_token = '074ee796765d8f215d1500fed44cdeb1c860d901da202f48a24fd33ce33ffe87'
 
 APNS.pem  = '/Users/robsiwek/Documents/cert.pem'
 
