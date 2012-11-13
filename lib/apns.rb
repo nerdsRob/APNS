@@ -23,8 +23,14 @@
  
 require 'apns/core'
 
-device_token = '074ee796765d8f215d1500fed44cdeb1c860d901da202f48a24fd33ce33ffe87'
+#high5
+#device_token = '074ee796765d8f215d1500fed44cdeb1c860d901da202f48a24fd33ce33ffe87'
+# yukon ipad
+#device_token = '4633f3e8f02d821b0a5c63f974b5864f29e4ea29190c2342e059d1ecf78a80b1'
+
+#mini
+device_token = 'a7c56a89a0135c9afc88c01dd1514d5178c3df9ee8aac27ab36482f16935d059'
 
 APNS.pem  = '/Users/robsiwek/Documents/cert.pem'
 
-APNS.send_notification(device_token, :uri => 'soundcloud:tracks:66193017', :alert =>'Pushy Push it...', :badge => 1, :sound => 'default')
+APNS.send_notification(device_token, :uri => 'soundcloud:tracks:58029082', :alert =>'Pushy Push it...', :badge => 1, :sound => 'default')
