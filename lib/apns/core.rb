@@ -151,8 +151,15 @@ module APNS
     raise "The path to your pem file does not exist!" unless File.exist?(self.pem)
     
     context      = OpenSSL::SSL::SSLContext.new
-    context.cert = OpenSSL::X509::Certificate.new(File.read(self.pem))
-    context.key  = OpenSSL::PKey::RSA.new(File.read(self.pem), self.pass)
+
+    if self.pem.end_with?(".p12")
+      pkcs = OpenSSL::PKCS12.new(File.read(self.pem), self.pass)
+      context.cert = pkcs.certificate
+      context.key = pkcs.key
+    else
+      context.cert = OpenSSL::X509::Certificate.new(File.read(self.pem))
+      context.key  = OpenSSL::PKey::RSA.new(File.read(self.pem), self.pass)
+    end
 
     retries = 0
     begin
