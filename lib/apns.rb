@@ -24,22 +24,20 @@
 require 'apns/core'
 
 # high5
-#device_token = '074ee796765d8f215d1500fed44cdeb1c860d901da202f48a24fd33ce33ffe87'
+#device_token = '074ee796765d8f215d1500fed44cdeb1c860d901da202f48a24fdXXXXXXX'
 
 # long tall sally
-device_token = '45dfe351cda3462cb14906e7d9bbc9d1d5ed0b143800a817f951a82c4f36207f'
-
+device_token = '45dfe351cda3462cb14906e7d9bbc9d1d5ed0b143800a817f951a82cXXXXXX'
 # yukon ipad
-#device_token = '4633f3e8f02d821b0a5c63f974b5864f29e4ea29190c2342e059d1ecf78a80b1'
+#device_token = '4633f3e8f02d821b0a5c63f974b5864f29e4ea29190c2342e059d1XXXXXXX'
 
 # mini
-#device_token = 'a7c56a89a0135c9afc88c01dd1514d5178c3df9ee8aac27ab36482f16935d059'
+#device_token = 'a7c56a89a0135c9afc88c01dd1514d5178c3df9ee8aac27ab36482XXXXXXX'
 
 # ipad
-#device_token = '85814bd59d2cac383db2271eb367e1baca2c751a647d1735933a2d2143095b91'
-
+#device_token = '85814bd59d2cac383db2271eb367e1baca2c751a647d1735933a2dXXXXXXX'
 APNS.pem  = '/Users/robsiwek/Documents/Certificates/cert.pem'
-APNS.send_notification(device_token, :uri => 'soundcloud:tracks:2342',
-									 :alert =>'One of your sounds has been reposted...',
-									 :badge => 1,
-									 :sound => 'default')
+APNS.send_notification(device_token, :uri => 'soundcloud:tracks:2342', 
+				     :alert =>'One of your sounds has been reposted...', 
+				     :badge => 1,
+				     :sound => 'default')
