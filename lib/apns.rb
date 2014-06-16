@@ -36,7 +36,7 @@ device_token = '45dfe351cda3462cb14906e7d9bbc9d1d5ed0b143800a817f951a82cXXXXXX'
 
 # ipad
 #device_token = '85814bd59d2cac383db2271eb367e1baca2c751a647d1735933a2dXXXXXXX'
-APNS.pem  = '/Users/robsiwek/Documents/Certificates/cert.pem'
+APNS.pem  = '/Certificates/cert.pem'
 APNS.send_notification(device_token, :uri => 'soundcloud:tracks:2342', 
 				     :alert =>'One of your sounds has been reposted...', 
 				     :badge => 1,
