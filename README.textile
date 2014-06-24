@@ -53,7 +53,10 @@ APNS.feedback_host = 'feedback.push.apple.com'
 # Path to the .pem file created earlier
 APNS.pem  = '/path/to/pem/file'
 
-# Password for decrypting the .pem file, if one was used
+# or you can use origin p12 file
+APNS.pem  = '/path/to/pem/file.p12'
+
+# Password for decrypting the .pem or p12 file, if one was used
 APNS.pass = 'xxxx'
 
 ####################
